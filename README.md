@@ -8,4 +8,4 @@
 详细介绍及文档请浏览：[QMUI Web 官网](http://qmuiteam.com/web)
 
 ## 界面预览
-<img src="https://raw.githubusercontent.com/QMUI/qmuidemo_web/master/public/style/images/independent/App.gif" width="644" height="632" alt="QMUI Web Desktop 效果图" />
+<img src="https://raw.githubusercontent.com/QMUI/qmuidemo_web/master/public/style/images/independent/App.gif" width="644" alt="QMUI Web Desktop 效果图" />
