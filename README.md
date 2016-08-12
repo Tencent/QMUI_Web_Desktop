@@ -7,5 +7,10 @@
 
 详细介绍及文档请浏览：[QMUI Web 官网](http://qmuiteam.com/web)
 
+## 下载使用
+QMUI Web Desktop 支持 macOS 与 Windows 平台。
+
+下载：[Github Release 下载](https://github.com/QMUI/qmui_web_desktop/releases)或[官网下载](http://qmuiteam.com/web/index.html#downloadDirect)
+
 ## 界面预览
 <img src="https://raw.githubusercontent.com/QMUI/qmuidemo_web/master/public/style/images/independent/App.gif" width="644" alt="QMUI Web Desktop 效果图" />
