@@ -28,6 +28,7 @@ let $toolbar = $('#toolbar');
 let $curProject = null;
 let finderTitle = Common.PLATFORM === 'win32' ? '打开项目文件夹' : '打开项目目录';
 let closeGulpManually = false;
+let justInitStatusBar = true;
 
 ipcRender.on('message', function(event){
      event.send('dd')
@@ -54,17 +55,16 @@ if (Common.PLATFORM === 'win32') {
     }
   );
 }
-$('.js_statusBar_min').on('click', function() {
-  remote.BrowserWindow.getFocusedWindow().minimize(); 
-});
 
 $('.js_statusBar_max').on('click', function() {
   const focusedWindow = remote.BrowserWindow.getFocusedWindow();
-  if (focusedWindow.isMaximizable()) {
+  // 因为每次打开 App 时，isMaximizable 都会为 true，但实际上窗口并没有最大化，因此加入一个标志位判断是否刚刚打开 App
+  if (focusedWindow.isMaximizable() && !justInitStatusBar) {
     focusedWindow.unmaximize(); 
     focusedWindow.setMaximizable(false); 
     $(this).removeClass('frame_statusBar_btn_Unmax');
   } else {
+    justInitStatusBar = false;
     focusedWindow.maximize(); 
     focusedWindow.setMaximizable(true); 
     $(this).addClass('frame_statusBar_btn_Unmax');
