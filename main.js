@@ -3,7 +3,6 @@
 const electron = require('electron');
 const app = electron.app;
 const Tray = electron.Tray;
-const Menu = electron.Menu;
 const BrowserWindow = electron.BrowserWindow;
 const path = require('path');
 const trayManage = require(path.join(__dirname, './src/tray'));
@@ -33,7 +32,7 @@ app.on('ready', function() {
   process.on('compass', function(type){
     if (type === 'starting') {
       trayManage.tray.setImage(trayManage.compassIconPath);
-    } else if (type === 'error' ) {
+    } else if (type === 'error') {
       trayManage.tray.setImage(trayManage.errorIconPath);
     } else {
       trayManage.tray.setImage(trayManage.iconPath);
