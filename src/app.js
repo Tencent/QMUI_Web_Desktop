@@ -208,9 +208,13 @@ function openProject(projectPath) {
   let storage = Common.getLocalStorage();
   let projectInfo;
   try {
-    projectInfo = require(projectPath + '/UI_dev/config.json');
-  } catch(e) {
-    alert('没有找到 UI_dev/config.json，不是标准的 QMUI 项目');
+    projectInfo = require(projectPath + '/UI_dev/config.js');
+  } catch(event) {
+    try {
+      projectInfo = require(projectPath + '/UI_dev/config.json');
+    } catch(e) {
+      alert('没有找到 UI_dev/config.json，不是标准的 QMUI 项目');
+    }
   }
   if (!projectInfo) {
     return;
@@ -247,7 +251,17 @@ function insertOpenProject(projectPath) {
 
   // 插入节点
   let projectDir = path.basename(projectPath);
-  let projectInfo = require(projectPath + '/UI_dev/config.json');
+  let projectInfo;
+  try {
+    projectInfo = require(projectPath + '/UI_dev/config.js');
+  } catch(event) {
+    try {
+      projectInfo = require(projectPath + '/UI_dev/config.json');
+    } catch(e) {
+      alert('没有找到 UI_dev/config.json，不是标准的 QMUI 项目');
+    }
+  }
+  console.log(projectInfo);
   let projectName = projectInfo.project;
 
   let $projectHtml = $(`<li class="project_stage_item js_project_item" data-project="${projectDir}" data-name="${projectName}" title="${projectPath}">
