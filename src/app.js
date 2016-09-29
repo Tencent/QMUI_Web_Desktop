@@ -16,6 +16,8 @@ let $openProject = $('#openProject');
 let $projectStage = $('#projectStage');
 let $projectList = $('#projectList');
 let $gulpButton = $('#gulpButton');
+let $mergeButton = $('#mergeButton');
+let $cleanButton = $('#cleanButton');
 let $delProject = $('#delProject');
 let $operationStage = $('#operationStage');
 let $logContent = $('#log');
@@ -55,6 +57,10 @@ if (Common.PLATFORM === 'win32') {
     }
   );
 }
+
+$('.js_statusBar_min').on('click', function() {    
+  remote.BrowserWindow.getFocusedWindow().minimize();     
+});
 
 $('.js_statusBar_max').on('click', function() {
   const focusedWindow = remote.BrowserWindow.getFocusedWindow();
@@ -473,14 +479,24 @@ function logReply(data) {
   }
 }
 
-function runDevTask(projectPath){
+function runDevTask(projectPath, task) {
   let child;
   let qmuiPath = projectPath + '/UI_dev/qmui_web';
+  let startTipText; // 任务启动时的 Log，避免 Gulp 任务响应慢时需要等待一段时间才看到反馈
+
+  if (task === 'main') {
+    startTipText = '开启 Gulp 服务...';
+  } else if (task === 'merge') {
+    startTipText = '开始合并变更文件...';
+  } else if (task === 'clean') {
+    startTipText = '开始清理文件...';
+  }
+  logReply(logTextWithDate(startTipText));
 
   if (Common.PLATFORM === 'win32') {
-    child = childProcess.exec('gulp main', {'cwd': qmuiPath, silent: true});
+    child = childProcess.exec('gulp ' + task, {'cwd': qmuiPath, silent: true});
   } else {
-    child = childProcess.spawn('gulp', ['main'], {env: {'PATH':'/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin'}, cwd: qmuiPath, silent: true});
+    child = childProcess.spawn('gulp', [task], {env: {'PATH':'/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin'}, cwd: qmuiPath, silent: true});
   }
 
   child.stdout.setEncoding('utf-8');
@@ -501,37 +517,39 @@ function runDevTask(projectPath){
     }
 
     let tipText;
-    if (closeGulpManually) {
-      closeGulpManually = false;
-      tipText = '已关闭 Gulp 服务';
-      logReply(logTextWithDate(tipText));
-    } else {
-      tipText = 'Gulp 进程意外关闭，请重新启动服务';
-      // 意外关闭的进程并没有进入正常的流程，因此需要手动更新 storage 和 UI 表现
-      let $project = $('.js_project_item[data-pid="' + this.pid + '"]');
-      $project.removeClass('project_stage_item_Watching');
-      $project.data('watch', false);
-
-      let storage = Common.getLocalStorage();
-      storage['projects'][projectDir]['pid'] = 0;
-      Common.setLocalStorage(storage);
-
-      if (projectDir === $curProject.data('project')) {
+    if (task === 'main') {
+      if (closeGulpManually) {
+        closeGulpManually = false;
+        tipText = '已关闭 Gulp 服务';
         logReply(logTextWithDate(tipText));
-        $gulpButton.removeClass('frame_toolbar_gulpBtn_Watching');
-        $gulpButton.text('开启 Gulp 服务');
       } else {
-        let sessionStorage = Common.getSessionStorage();
-        let logData = sessionStorage['projects'][projectDir]['log'];
-        let closeTip = logTextWithDate(tipText).replace(/\[(.*?)\]/g, '[<span class="operation_stage_log_time">$1</span>]'); // 时间高亮
-        sessionStorage['projects'][projectDir]['log'] = logData + closeTip;
-        Common.setSessionStorage(sessionStorage);
+        tipText = 'Gulp 进程意外关闭，请重新启动服务';
+        // 意外关闭的进程并没有进入正常的流程，因此需要手动更新 storage 和 UI 表现
+        let $project = $('.js_project_item[data-pid="' + this.pid + '"]');
+        $project.removeClass('project_stage_item_Watching');
+        $project.data('watch', false);
+
+        let storage = Common.getLocalStorage();
+        storage['projects'][projectDir]['pid'] = 0;
+        Common.setLocalStorage(storage);
+
+        if (projectDir === $curProject.data('project')) {
+          logReply(logTextWithDate(tipText));
+          $gulpButton.removeClass('frame_toolbar_gulpBtn_Watching');
+          $gulpButton.text('开启 Gulp 服务');
+        } else {
+          let sessionStorage = Common.getSessionStorage();
+          let logData = sessionStorage['projects'][projectDir]['log'];
+          let closeTip = logTextWithDate(tipText).replace(/\[(.*?)\]/g, '[<span class="operation_stage_log_time">$1</span>]'); // 时间高亮
+          sessionStorage['projects'][projectDir]['log'] = logData + closeTip;
+          Common.setSessionStorage(sessionStorage);
+        }
+        // 改变状态栏图标
+        mainProcess.emit('closeGulp');
+        // 发出通知
+        let projectName = $project.data('name');
+        Common.postNotification('Gulp 意外停止工作', '项目 ' + projectName + ' (' + projectDir + ') 的 Gulp 服务停止工作，请重新启动');
       }
-      // 改变状态栏图标
-      mainProcess.emit('closeGulp');
-      // 发出通知
-      let projectName = $project.data('name');
-      Common.postNotification('Gulp 意外停止工作', '项目 ' + projectName + ' (' + projectDir + ') 的 Gulp 服务停止工作，请重新启动');
     }
   });
 
@@ -539,15 +557,25 @@ function runDevTask(projectPath){
   let projectDir = $curProject.data('project');
 
   if (storage && storage['projects'] && storage['projects'][projectDir]) {
-    console.log(child.pid);
-    storage['projects'][projectDir]['pid'] = child.pid;
-    Common.setLocalStorage(storage);
+    if (task === 'main') {
+      console.log(child.pid);
+      storage['projects'][projectDir]['pid'] = child.pid;
+      Common.setLocalStorage(storage);
 
-    $curProject.attr('data-pid', child.pid);
+      $curProject.attr('data-pid', child.pid);
 
-    setWatching();
+      setWatching();
+    }
   }
 }
+
+var runTaskInCurrentTask = function(task) {
+    let projectDir = $curProject.data('project');
+    let storage = Common.getLocalStorage();
+    if (storage && storage['projects'] && storage['projects'][projectDir]) {
+      runDevTask(storage['projects'][projectDir]['path'], task);
+    }
+};
 
 $gulpButton.on('click', function() {
 
@@ -558,12 +586,19 @@ $gulpButton.on('click', function() {
     killChildProcess(projectDir);
     setNormal();
   } else {
-    let storage = Common.getLocalStorage();
-    if (storage && storage['projects'] && storage['projects'][projectDir]) {
-      runDevTask(storage['projects'][projectDir]['path']);
-    }
+    runTaskInCurrentTask('main');
   }
-}); 
+});
+
+$mergeButton.on('click', function() {
+
+  runTaskInCurrentTask('merge');
+});
+
+$cleanButton.on('click', function() {
+
+  runTaskInCurrentTask('clean');
+});
 
 // 设置界面
 $showSettingButton.on('click', function() {

@@ -9,7 +9,7 @@ const trayManage = require(path.join(__dirname, './src/tray'));
 let mainWindow;
 
 function createWindow () {
-  // 创建一个 800x600 的浏览器窗口
+  // 创建一个 440x640 的浏览器窗口
   mainWindow = new BrowserWindow({width: 440, height: 640, minWidth: 400, minHeight: 640, frame: false});
 
   // 加载应用的界面文件

@@ -14,7 +14,7 @@
  * #retina Retina 适配
  */
 
-/* reset CSS Reset */
+/* #reset CSS Reset */
 body, dl, dd, h1, h2, h3, h4, h5, h6, p, pre, form, fieldset, legend {
   margin: 0;
 }
@@ -293,14 +293,15 @@ html {
   bottom: 0;
   left: 0;
   width: 100%;
-  padding: 12px;
+  padding: 12px 10px 12px 12px;
   box-sizing: border-box;
   border-top: 1px solid #DEE0E2;
 }
-.frame_toolbar_gulpBtn {
+.frame_toolbar_btn {
   float: right;
   height: 32px;
-  width: 112px;
+  margin-right: 8px;
+  padding: 0 8px;
   border: 1px solid #00A3E1;
   border-radius: 4px;
   line-height: 32px;
@@ -308,6 +309,9 @@ html {
   color: #00A3E1;
   font-size: 13px;
   box-sizing: border-box;
+}
+.frame_toolbar_btn:first-child {
+  margin-right: 0;
 }
 .frame_toolbar_gulpBtn:hover {
   background-color: #00A3E1;
@@ -331,7 +335,10 @@ html {
 }
 .frame_toolbar_item {
   float: left;
-  margin-right: 4px;
+  margin-right: 2px;
+}
+.frame_toolbar_item:last-child {
+  margin-right: 0;
 }
 .frame_toolbar_item:hover .qw_icon_Add {
   background-image: url(../images/icon_add_hover.png);
