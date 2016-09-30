@@ -363,7 +363,13 @@ function delProject(cb) {
 
 // 清除 log 信息
 $cleanLog.on('click', function () {
-    $logContent.html('');
+  // 清空 Log 界面
+  $logContent.html('');
+  // 清空 Storage
+  let projectDir = $curProject.data('project');
+  let sessionStorage = Common.getSessionStorage();
+  sessionStorage['projects'][projectDir]['log'] = '';
+  Common.setSessionStorage(sessionStorage);
 });
 
 // 项目列表绑定点击事件
@@ -564,16 +570,11 @@ function runDevTask(projectPath, task) {
         Common.setLocalStorage(storage);
 
         if (projectDir === $curProject.data('project')) {
-          logReply(logTextWithDate(tipText), projectPath);
           $gulpButton.removeClass('frame_toolbar_btn_Watching');
           $gulpButton.text('开启 Gulp 服务');
-        } else {
-          let sessionStorage = Common.getSessionStorage();
-          let logData = sessionStorage['projects'][projectDir]['log'];
-          let closeTip = logTextWithDate(tipText).replace(/\[(.*?)\]/g, '[<span class="operation_stage_log_time">$1</span>]'); // 时间高亮
-          sessionStorage['projects'][projectDir]['log'] = logData + closeTip;
-          Common.setSessionStorage(sessionStorage);
         }
+        logReply(logTextWithDate(tipText), projectPath);
+
         // 改变状态栏图标
         mainProcess.emit('closeGulp');
         // 发出通知
