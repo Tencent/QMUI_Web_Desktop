@@ -15,5 +15,8 @@
     "lodash": "^4.16.2"
   },
   "author": "QMUI Team",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "fs-extra": "^0.30.0"
+  }
 }

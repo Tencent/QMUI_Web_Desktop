@@ -1,7 +1,7 @@
 "use strict";
 
 const path = require('path');
-const fs = require('fs');
+const fs = require('fs-extra');
 const childProcess = require('child_process');
 const _ = require('lodash');
 const shell = electron.shell;
@@ -15,6 +15,7 @@ let $welcomeStage = $('#welcomeStage');
 let $openProject = $('#openProject');
 let $projectStage = $('#projectStage');
 let $projectList = $('#projectList');
+let $installButton = $('#installButton');
 let $gulpButton = $('#gulpButton');
 let $mergeButton = $('#mergeButton');
 let $cleanButton = $('#cleanButton');
@@ -372,10 +373,26 @@ $projectList.on('click', '.js_project_item', function () {
   $this.addClass('project_stage_item_Current');
   $curProject = $this;
 
-  if ($this.data('watch')) {
-    setWatching();
+  // 检测当前项目是否有安装依赖包
+  let projectPath = $curProject.attr('title');
+  let qmuiModulePath = projectPath + '/UI_dev/qmui_web/node_modules';
+  if (!fs.existsSync(qmuiModulePath)) {
+    $gulpButton.addClass('qw_hide');
+    $mergeButton.addClass('qw_hide');
+    $cleanButton.addClass('qw_hide');
+    $installButton.removeClass('qw_hide');
   } else {
-    setNormal();
+    $gulpButton.removeClass('qw_hide');
+    $mergeButton.removeClass('qw_hide');
+    $cleanButton.removeClass('qw_hide');
+    $installButton.addClass('qw_hide');
+
+    // 根据是否开启了服务设置 Gulp 按钮的状态
+    if ($this.data('watch')) {
+      setWatching();
+    } else {
+      setNormal();
+    }
   }
 
   // log 切换
@@ -398,7 +415,7 @@ $projectList.on('click', '.js_openFolder', function () {
 });
 
 function setNormal() {
-  $gulpButton.removeClass('frame_toolbar_gulpBtn_Watching');
+  $gulpButton.removeClass('frame_toolbar_btn_Watching');
   $gulpButton.text('开启 Gulp 服务');
 
   $curProject.removeClass('project_stage_item_Watching');
@@ -406,7 +423,7 @@ function setNormal() {
 }
 
 function setWatching() {
-  $gulpButton.addClass('frame_toolbar_gulpBtn_Watching');
+  $gulpButton.addClass('frame_toolbar_btn_Watching');
   $gulpButton.text('Gulp 正在服务');
 
   $curProject.addClass('project_stage_item_Watching');
@@ -436,19 +453,22 @@ function killChildProcess(projectDir) {
   }
 }
 
-function logReply(data) {
+var logReply = function(data, projectPath) {
   let originData = data;
-  let projectDir = $curProject.data('project');
+  let projectDir = path.basename(projectPath);
+  let curProjectPath = $curProject.attr('title');
   let sessionStorage = Common.getSessionStorage();
   data = data.replace(/\n/g, '<br/>');
   data = data.replace(/\[(.*?)\]/g, '[<span class="operation_stage_log_time">$1</span>]'); // 时间高亮
   data = data.replace(/\'(.*?)\'/g, '\'<span class="operation_stage_log_keyword">$1</span>\''); // 单引号内的关键词高亮 
   data = data.replace(/(QMUI .*?):/, '\'<span class="operation_stage_log_qmui">$1</span>\''); // QMUI 任务名高亮 
-  $logContent.append(`${data}`);
-  $logContent.scrollTop($logContent.get(0).scrollHeight);
+  if (projectPath === curProjectPath) {
+    $logContent.append(`${data}`);
+    $logContent.scrollTop($logContent.get(0).scrollHeight);
+  }
 
   // 把 log 写入 sessionStorage
-  sessionStorage['projects'][projectDir]['log'] = $logContent.html();
+  sessionStorage['projects'][projectDir]['log'] = sessionStorage['projects'][projectDir]['log'] + data;
   Common.setSessionStorage(sessionStorage);
 
   // Compass 编译完成后发通知
@@ -490,38 +510,48 @@ function runDevTask(projectPath, task) {
     startTipText = '开始合并变更文件...';
   } else if (task === 'clean') {
     startTipText = '开始清理文件...';
+  } else if (task === 'install') {
+    startTipText = '开始为该项目安装 QMUI Web 所需的依赖包...';
   }
-  logReply(logTextWithDate(startTipText));
+  logReply(logTextWithDate(startTipText), projectPath);
 
   if (Common.PLATFORM === 'win32') {
-    child = childProcess.exec('gulp ' + task, {'cwd': qmuiPath, silent: true});
+    if (task === 'install') {
+      child = childProcess.exec('npm install', {'cwd': qmuiPath, silent: true});
+    } else {
+      child = childProcess.exec('gulp ' + task, {'cwd': qmuiPath, silent: true});
+    }
   } else {
-    child = childProcess.spawn('gulp', [task], {env: {'PATH':'/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin'}, cwd: qmuiPath, silent: true});
+    if (task === 'install') {
+      child = childProcess.spawn('npm', [task], {env: {'PATH':'/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin'}, cwd: qmuiPath});
+    } else {
+      child = childProcess.spawn('gulp', [task], {env: {'PATH':'/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin'}, cwd: qmuiPath, silent: true});
+    }
   }
 
   child.stdout.setEncoding('utf-8');
   child.stdout.on('data', function (data) {
     console.log(data);
-    logReply(data.toString());
+    logReply(data.toString(), projectPath);
   });
 
   child.stderr.on('data', function (data) {
     console.log(data)
-    logReply(data.toString());
+    logReply(data.toString(), projectPath);
   });
 
   child.on('close', function (code) {
     console.log(code);
     if (code && code !== 0) {
-      logReply(`child process exited with code ${code}`);
+      logReply(`child process exited with code ${code}`, projectPath);
     }
 
-    let tipText;
     if (task === 'main') {
+      let tipText;
       if (closeGulpManually) {
         closeGulpManually = false;
         tipText = '已关闭 Gulp 服务';
-        logReply(logTextWithDate(tipText));
+        logReply(logTextWithDate(tipText), projectPath);
       } else {
         tipText = 'Gulp 进程意外关闭，请重新启动服务';
         // 意外关闭的进程并没有进入正常的流程，因此需要手动更新 storage 和 UI 表现
@@ -534,8 +564,8 @@ function runDevTask(projectPath, task) {
         Common.setLocalStorage(storage);
 
         if (projectDir === $curProject.data('project')) {
-          logReply(logTextWithDate(tipText));
-          $gulpButton.removeClass('frame_toolbar_gulpBtn_Watching');
+          logReply(logTextWithDate(tipText), projectPath);
+          $gulpButton.removeClass('frame_toolbar_btn_Watching');
           $gulpButton.text('开启 Gulp 服务');
         } else {
           let sessionStorage = Common.getSessionStorage();
@@ -550,6 +580,12 @@ function runDevTask(projectPath, task) {
         let projectName = $project.data('name');
         Common.postNotification('Gulp 意外停止工作', '项目 ' + projectName + ' (' + projectDir + ') 的 Gulp 服务停止工作，请重新启动');
       }
+    } else if (task === 'install') {
+      $gulpButton.removeClass('qw_hide');
+      $mergeButton.removeClass('qw_hide');
+      $cleanButton.removeClass('qw_hide');
+      $installButton.addClass('qw_hide');
+      logReply(logTextWithDate('依赖包安装完毕，可以开始使用 QMUI Web 的功能'), projectPath);
     }
   });
 
@@ -576,6 +612,10 @@ var runTaskInCurrentTask = function(task) {
       runDevTask(storage['projects'][projectDir]['path'], task);
     }
 };
+
+$installButton.on('click', function() {
+  runTaskInCurrentTask('install');
+});
 
 $gulpButton.on('click', function() {
 

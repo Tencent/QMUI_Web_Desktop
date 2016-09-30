@@ -313,23 +313,23 @@ html {
 .frame_toolbar_btn:first-child {
   margin-right: 0;
 }
-.frame_toolbar_gulpBtn:hover {
+.frame_toolbar_btn:hover {
   background-color: #00A3E1;
   color: #fff;
 }
-.frame_toolbar_gulpBtn:active {
+.frame_toolbar_btn:active {
   border-color: #0094CD;
   background-color: #0094CD;
 }
-.frame_toolbar_gulpBtn_Watching {
+.frame_toolbar_btn_Watching {
   border-color: #3ECE5A;
   color: #3ECE5A;
 }
-.frame_toolbar_gulpBtn_Watching:hover {
+.frame_toolbar_btn_Watching:hover {
   background-color: #3ECE5A;
   color: #fff;
 }
-.frame_toolbar_gulpBtn_Watching:active {
+.frame_toolbar_btn_Watching:active {
   background-color: #1CB83A;
   border-color: #1CB83A;
 }
@@ -391,7 +391,7 @@ html {
 }
 .frame_toolbar_EmptyProject .frame_toolbar_item_DelProject,
 .frame_toolbar_EmptyProject .frame_toolbar_item_Setting,
-.frame_toolbar_EmptyProject .frame_toolbar_gulpBtn {
+.frame_toolbar_EmptyProject .frame_toolbar_btn {
   display: none;
 }
 
