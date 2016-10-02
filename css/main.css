@@ -333,6 +333,10 @@ html {
   background-color: #1CB83A;
   border-color: #1CB83A;
 }
+.frame_toolbar_btn_Gulp {
+  width: 105px;
+}
+
 .frame_toolbar_item {
   float: left;
   margin-right: 2px;
