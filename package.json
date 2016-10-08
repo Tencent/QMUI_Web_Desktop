@@ -10,9 +10,9 @@
   },
   "devDependencies": {
     "asar": "^0.12.3",
-    "electron-packager": "^8.0.0",
-    "electron-prebuilt": "^1.4.1",
-    "lodash": "^4.16.2"
+    "electron-packager": "^8.1.0",
+    "electron-prebuilt": "^1.4.3",
+    "lodash": "^4.16.4"
   },
   "author": "QMUI Team",
   "license": "MIT",

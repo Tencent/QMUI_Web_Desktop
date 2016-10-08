@@ -310,9 +310,6 @@ html {
   font-size: 13px;
   box-sizing: border-box;
 }
-.frame_toolbar_btn:first-child {
-  margin-right: 0;
-}
 .frame_toolbar_btn:hover {
   background-color: #00A3E1;
   color: #fff;
@@ -332,6 +329,10 @@ html {
 .frame_toolbar_btn_Watching:active {
   background-color: #1CB83A;
   border-color: #1CB83A;
+}
+.frame_toolbar_btn_Install,
+.frame_toolbar_btn_Gulp {
+  margin-right: 0;
 }
 .frame_toolbar_btn_Gulp {
   width: 105px;
