@@ -143,6 +143,20 @@ function initData() {
             $curProject = $projectList.find('.js_project_item').eq(0);
             $curProject.addClass('project_stage_item_Current');
 
+            let projectPath = $curProject.attr('title');
+            let qmuiModulePath = projectPath + '/UI_dev/qmui_web/node_modules';
+            if (!fs.existsSync(qmuiModulePath)) {
+              $gulpButton.addClass('qw_hide');
+              $mergeButton.addClass('qw_hide');
+              $cleanButton.addClass('qw_hide');
+              $installButton.removeClass('qw_hide');
+            } else {
+              $gulpButton.removeClass('qw_hide');
+              $mergeButton.removeClass('qw_hide');
+              $cleanButton.removeClass('qw_hide');
+              $installButton.addClass('qw_hide');
+            }
+
             // 复制一份数据到 sessionStorage，方便后续使用
             Common.setSessionStorage(storage);
 

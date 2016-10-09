@@ -90,12 +90,14 @@ var template = [
   submenu: [
   {
     label: '开启/关闭调试工具',
+    accelerator: 'CmdOrCtrl+D',
     click: function () {
       remote.getCurrentWebContents().toggleDevTools();
     }
   },
   {
     label: '重置储存数据',
+    accelerator: 'CmdOrCtrl+shift+R',
     click: function () {
       resetAppStorage();
     }
