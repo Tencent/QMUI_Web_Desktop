@@ -330,6 +330,15 @@ html {
   background-color: #1CB83A;
   border-color: #1CB83A;
 }
+.frame_toolbar_btn_Disabled {
+  opacity: .5;
+}
+.frame_toolbar_btn_Disabled:hover,
+.frame_toolbar_btn_Disabled:active {
+  background-color: transparent;
+  border: 1px solid #00A3E1;
+  color: #00A3E1;
+}
 .frame_toolbar_btn_Install,
 .frame_toolbar_btn_Gulp {
   margin-right: 0;

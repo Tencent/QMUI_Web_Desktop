@@ -409,9 +409,15 @@ $projectList.on('click', '.js_project_item', function () {
 
     // 根据是否开启了服务设置 Gulp 按钮的状态
     if ($this.data('watch')) {
-      setWatching();
+      setGulpBtnWatching();
     } else {
-      setNormal();
+      setGulpBtnNormal();
+    }
+    // 根据是否正在安装依赖包设置 Install 按钮的状态
+    if ($this.data('install')) {
+      setInstallBtnInstalling();
+    } else {
+      setInstallBtnNormal();
     }
   }
 
@@ -434,7 +440,7 @@ $projectList.on('click', '.js_openFolder', function () {
   }
 });
 
-function setNormal() {
+function setGulpBtnNormal() {
   $gulpButton.removeClass('frame_toolbar_btn_Watching');
   $gulpButton.text('开启 Gulp 服务');
 
@@ -442,12 +448,24 @@ function setNormal() {
   $curProject.data('watch', false);
 }
 
-function setWatching() {
+function setGulpBtnWatching() {
   $gulpButton.addClass('frame_toolbar_btn_Watching');
   $gulpButton.text('Gulp 正在服务');
 
   $curProject.addClass('project_stage_item_Watching');
   $curProject.data('watch', true);
+}
+
+function setInstallBtnNormal() {
+  $installButton.removeClass('frame_toolbar_btn_Disabled');
+
+  $curProject.data('install', false);
+}
+
+function setInstallBtnInstalling() {
+  $installButton.addClass('frame_toolbar_btn_Disabled');
+
+  $curProject.data('install', true);
 }
 
 // 结束子进程
@@ -548,6 +566,7 @@ function runDevTask(projectPath, task) {
       child = childProcess.spawn('gulp', [task], {env: {'PATH':'/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin'}, cwd: qmuiPath, silent: true});
     }
   }
+  console.log(child.pid);
 
   child.stdout.setEncoding('utf-8');
   child.stdout.on('data', function (data) {
@@ -566,8 +585,9 @@ function runDevTask(projectPath, task) {
       logReply(`child process exited with code ${code}`, projectPath);
     }
 
+    let tipText;
     if (task === 'main') {
-      let tipText;
+      // Gulp 服务进程结束处理
       if (closeGulpManually) {
         closeGulpManually = false;
         tipText = '已关闭 Gulp 服务';
@@ -596,11 +616,39 @@ function runDevTask(projectPath, task) {
         Common.postNotification('Gulp 意外停止工作', '项目 ' + projectName + ' (' + projectDir + ') 的 Gulp 服务停止工作，请重新启动');
       }
     } else if (task === 'install') {
-      $gulpButton.removeClass('qw_hide');
-      $mergeButton.removeClass('qw_hide');
-      $cleanButton.removeClass('qw_hide');
-      $installButton.addClass('qw_hide');
-      logReply(logTextWithDate('依赖包安装完毕，可以开始使用 QMUI Web 的功能'), projectPath);
+      // 安装依赖包进程结束处理
+      // 按照进程 pid 确定项目，然后手动更新 storage 和 UI 表现
+      let $project = $('.js_project_item[data-pid="' + this.pid + '"]');
+      $project.data('install', false);
+
+      let storage = Common.getLocalStorage();
+      storage['projects'][projectDir]['pid'] = 0;
+      Common.setLocalStorage(storage);
+
+      if (projectDir === $curProject.data('project')) {
+        $installButton.removeClass('frame_toolbar_btn_Disabled');
+      }
+
+      if (code && code !== 0) {
+        // 出错处理
+        tipText = '安装依赖包进程意外停止，请检查 NPM 和 Github 等环境后重新启动';
+        logReply(logTextWithDate(tipText), projectPath);
+        // 改变状态栏图标
+        mainProcess.emit('closeGulp');
+        // 发出通知
+        let projectName = $project.data('name');
+        Common.postNotification('安装依赖包进程意外停止', '项目 ' + projectName + ' (' + projectDir + ') 安装依赖包进程意外停止，请检查 NPM 和 Github 等环境后重新启动');
+      } else {
+        // 成功处理
+        if (projectDir === $curProject.data('project')) {
+          $gulpButton.removeClass('qw_hide');
+          $mergeButton.removeClass('qw_hide');
+          $cleanButton.removeClass('qw_hide');
+          $installButton.addClass('qw_hide');
+        }
+        tipText = '依赖包安装完毕，可以开始使用 QMUI Web 的功能';
+        logReply(logTextWithDate(tipText), projectPath);
+      }
     }
   });
 
@@ -615,12 +663,15 @@ function runDevTask(projectPath, task) {
 
       $curProject.attr('data-pid', child.pid);
 
-      setWatching();
+      setGulpBtnWatching();
+
+    } else if (task === 'install') {
+      setInstallBtnInstalling();
     }
   }
 }
 
-var runTaskInCurrentTask = function(task) {
+var runTaskOnCurrentProject = function(task) {
     let projectDir = $curProject.data('project');
     let storage = Common.getLocalStorage();
     if (storage && storage['projects'] && storage['projects'][projectDir]) {
@@ -629,7 +680,9 @@ var runTaskInCurrentTask = function(task) {
 };
 
 $installButton.on('click', function() {
-  runTaskInCurrentTask('install');
+  if (!$curProject.data('install')) {
+    runTaskOnCurrentProject('install');
+  }
 });
 
 $gulpButton.on('click', function() {
@@ -639,20 +692,20 @@ $gulpButton.on('click', function() {
   if ($curProject.data('watch')) {
     closeGulpManually = true;
     killChildProcess(projectDir);
-    setNormal();
+    setGulpBtnNormal();
   } else {
-    runTaskInCurrentTask('main');
+    runTaskOnCurrentProject('main');
   }
 });
 
 $mergeButton.on('click', function() {
 
-  runTaskInCurrentTask('merge');
+  runTaskOnCurrentProject('merge');
 });
 
 $cleanButton.on('click', function() {
 
-  runTaskInCurrentTask('clean');
+  runTaskOnCurrentProject('clean');
 });
 
 // 设置界面
