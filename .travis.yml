@@ -8,5 +8,5 @@ node_js:
 before_script:
   - npm install
 script:
-	- npm run build:mac
-	- npm run build:win
+  - npm run build:mac
+  - npm run build:win
