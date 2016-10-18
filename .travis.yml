@@ -9,4 +9,3 @@ before_script:
   - npm install
 script:
   - npm run build:mac
-  - npm run build:win
