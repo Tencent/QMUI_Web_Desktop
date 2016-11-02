@@ -18,7 +18,3 @@ indent_size = 2
 
 # Others
 trim_trailing_whitespace = true
-
-# YAML Format
-[*.yml]
-indent_style = space
