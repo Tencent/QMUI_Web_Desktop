@@ -59,28 +59,28 @@ if (Common.PLATFORM === 'win32') {
   );
 }
 
-$('.js_statusBar_min').on('click', function() {    
-  remote.BrowserWindow.getFocusedWindow().minimize();     
+$('.js_statusBar_min').on('click', function() {
+  remote.BrowserWindow.getFocusedWindow().minimize();
 });
 
 $('.js_statusBar_max').on('click', function() {
   const focusedWindow = remote.BrowserWindow.getFocusedWindow();
   // 因为每次打开 App 时，isMaximizable 都会为 true，但实际上窗口并没有最大化，因此加入一个标志位判断是否刚刚打开 App
   if (focusedWindow.isMaximizable() && !justInitStatusBar) {
-    focusedWindow.unmaximize(); 
-    focusedWindow.setMaximizable(false); 
+    focusedWindow.unmaximize();
+    focusedWindow.setMaximizable(false);
     $(this).removeClass('frame_statusBar_btn_Unmax');
   } else {
     justInitStatusBar = false;
-    focusedWindow.maximize(); 
-    focusedWindow.setMaximizable(true); 
+    focusedWindow.maximize();
+    focusedWindow.setMaximizable(true);
     $(this).addClass('frame_statusBar_btn_Unmax');
   }
 });
 
 $('.js_statusBar_close').on('click', function() {
   remote.BrowserWindow.getFocusedWindow().close();
-}); 
+});
 
 // 禁止缩放
 electron.webFrame.setZoomLevelLimits(1, 1);
@@ -311,6 +311,8 @@ function insertOpenProject(projectPath) {
     storage['projects'][projectDir]['name'] = projectName;
     storage['projects'][projectDir]['path'] = projectPath;
     storage['projects'][projectDir]['log'] = '';
+    // 增加一个记录当前任务是否错误的字段，供输出日志时使用
+    storage['projects'][projectDir]['compileError'] = 'false';
 
     Common.setLocalStorage(storage);
     // 同步更新 sessionStorage，方便后续使用
@@ -491,37 +493,53 @@ function killChildProcess(projectDir) {
   }
 }
 
-var logReply = function(data, projectPath) {
+function logReply(data, projectPath, isNodeSassVersion) {
   let originData = data;
   let projectDir = path.basename(projectPath);
   let curProjectPath = $curProject.attr('title');
   let sessionStorage = Common.getSessionStorage();
   data = data.replace(/\n/g, '<br/>');
   data = data.replace(/\[(.*?)\]/g, '[<span class="operation_stage_log_time">$1</span>]'); // 时间高亮
-  data = data.replace(/\'(.*?)\'/g, '\'<span class="operation_stage_log_keyword">$1</span>\''); // 单引号内的关键词高亮 
-  data = data.replace(/(QMUI .*?):/, '\'<span class="operation_stage_log_qmui">$1</span>\''); // QMUI 任务名高亮 
+  data = data.replace(/\'(.*?)\'/g, '\'<span class="operation_stage_log_keyword">$1</span>\''); // 单引号内的关键词高亮
+  data = data.replace(/(QMUI .*?):/, '\'<span class="operation_stage_log_qmui">$1</span>\''); // QMUI 任务名高亮
   if (projectPath === curProjectPath) {
     $logContent.append(`${data}`);
     $logContent.scrollTop($logContent.get(0).scrollHeight);
   }
 
   // 把 log 写入 sessionStorage
-  sessionStorage['projects'][projectDir]['log'] = sessionStorage['projects'][projectDir]['log'] + data;
+  sessionStorage['projects'][projectDir]['log'] += data;
   Common.setSessionStorage(sessionStorage);
 
-  // Compass 编译完成后发通知
+  // 样式编译完成后发通知
   let localStorage = Common.getLocalStorage();
-  // Compass 编译失败通知
-  if (originData.match(/'compass' errored/i)) {
+  // 判断各种情况的正则
+  let errorReg;
+  let finishedReg;
+  let startingReg;
+  if (isNodeSassVersion) {
+    errorReg = /Error in plugin 'sass'/i;
+    finishedReg = /Finished 'sass'/i;
+    startingReg = /Starting 'sass'/i;
+  } else {
+    errorReg = /'compass' errored/i;
+    finishedReg = /Finished 'compass'/i;
+    startingReg = /Starting 'compass'/i;
+  }
+  // 样式编译失败通知
+  if (originData.match(errorReg)) {
+    sessionStorage['projects'][projectDir]['compileError'] = 'true';
+    Common.setSessionStorage(sessionStorage);
     if (localStorage['setting']['compass']['statusIcon'] === 'true') {
       mainProcess.emit('compass', 'error');
     }
     if (localStorage['setting']['compass']['notification'] === 'true') {
       Common.postNotification('Compass 编译失败', '详细情况请查看 Log');
     }
-  } 
-  // Compass 编译完成通知
-  if (originData.match(/Finished 'compass'/i)) {
+  }
+  // 样式编译完成通知
+  let isCurrentLogError = sessionStorage['projects'][projectDir]['compileError'];
+  if (originData.match(finishedReg) && isCurrentLogError != 'true') {
     if (localStorage['setting']['compass']['statusIcon'] === 'true') {
       mainProcess.emit('compass', 'finish');
     }
@@ -529,8 +547,10 @@ var logReply = function(data, projectPath) {
       Common.postNotification('Compass 编译完成', '样式已经输出');
     }
   }
-  // Compass 编译开始通知（仅有状态栏通知）
-  if (originData.match(/Starting 'compass'/i)) {
+  // 样式编译开始通知（仅有状态栏通知）
+  if (originData.match(startingReg)) {
+    sessionStorage['projects'][projectDir]['compileError'] = 'false';
+    Common.setSessionStorage(sessionStorage);
     if (localStorage['setting']['compass']['statusIcon'] === 'true') {
       mainProcess.emit('compass', 'starting');
     }
@@ -540,7 +560,12 @@ var logReply = function(data, projectPath) {
 function runDevTask(projectPath, task) {
   let child;
   let qmuiPath = projectPath + '/UI_dev/qmui_web';
+  let qmuiInfo = require(qmuiPath + '/package.json');
   let startTipText; // 任务启动时的 Log，避免 Gulp 任务响应慢时需要等待一段时间才看到反馈
+  let isNodeSassVersion = false; // 用于记录当前项目的 QMUI 是否为基于 Node Sass 的 2.0.0 版本
+  if (compareVersion(qmuiInfo.version, '2.0.0') >= 0) {
+    isNodeSassVersion = true;
+  }
 
   if (task === 'main') {
     startTipText = '开启 Gulp 服务...';
@@ -551,7 +576,7 @@ function runDevTask(projectPath, task) {
   } else if (task === 'install') {
     startTipText = '开始为该项目安装 QMUI Web 所需的依赖包...';
   }
-  logReply(logTextWithDate(startTipText), projectPath);
+  logReply(logTextWithDate(startTipText), projectPath, isNodeSassVersion);
 
   if (Common.PLATFORM === 'win32') {
     if (task === 'install') {
@@ -571,18 +596,18 @@ function runDevTask(projectPath, task) {
   child.stdout.setEncoding('utf-8');
   child.stdout.on('data', function (data) {
     console.log(data);
-    logReply(data.toString(), projectPath);
+    logReply(data.toString(), projectPath, isNodeSassVersion);
   });
 
   child.stderr.on('data', function (data) {
     console.log(data)
-    logReply(data.toString(), projectPath);
+    logReply(data.toString(), projectPath, isNodeSassVersion);
   });
 
   child.on('close', function (code) {
     console.log(code);
     if (code && code !== 0) {
-      logReply(`child process exited with code ${code}`, projectPath);
+      logReply(`child process exited with code ${code}`, projectPath, isNodeSassVersion);
     }
 
     let tipText;
@@ -591,7 +616,7 @@ function runDevTask(projectPath, task) {
       if (closeGulpManually) {
         closeGulpManually = false;
         tipText = '已关闭 Gulp 服务';
-        logReply(logTextWithDate(tipText), projectPath);
+        logReply(logTextWithDate(tipText), projectPath, isNodeSassVersion);
       } else {
         tipText = 'Gulp 进程意外关闭，请重新启动服务';
         // 意外关闭的进程并没有进入正常的流程，因此需要手动更新 storage 和 UI 表现
@@ -607,7 +632,7 @@ function runDevTask(projectPath, task) {
           $gulpButton.removeClass('frame_toolbar_btn_Watching');
           $gulpButton.text('开启 Gulp 服务');
         }
-        logReply(logTextWithDate(tipText), projectPath);
+        logReply(logTextWithDate(tipText), projectPath, isNodeSassVersion);
 
         // 改变状态栏图标
         mainProcess.emit('closeGulp');
@@ -632,7 +657,7 @@ function runDevTask(projectPath, task) {
       if (code && code !== 0) {
         // 出错处理
         tipText = '安装依赖包进程意外停止，请检查 NPM 和 Github 等环境后重新启动';
-        logReply(logTextWithDate(tipText), projectPath);
+        logReply(logTextWithDate(tipText), projectPath, isNodeSassVersion);
         // 改变状态栏图标
         mainProcess.emit('closeGulp');
         // 发出通知
@@ -647,7 +672,7 @@ function runDevTask(projectPath, task) {
           $installButton.addClass('qw_hide');
         }
         tipText = '依赖包安装完毕，可以开始使用 QMUI Web 的功能';
-        logReply(logTextWithDate(tipText), projectPath);
+        logReply(logTextWithDate(tipText), projectPath, isNodeSassVersion);
       }
     }
   });
@@ -671,13 +696,13 @@ function runDevTask(projectPath, task) {
   }
 }
 
-var runTaskOnCurrentProject = function(task) {
+function runTaskOnCurrentProject(task) {
     let projectDir = $curProject.data('project');
     let storage = Common.getLocalStorage();
     if (storage && storage['projects'] && storage['projects'][projectDir]) {
       runDevTask(storage['projects'][projectDir]['path'], task);
     }
-};
+}
 
 $installButton.on('click', function() {
   if (!$curProject.data('install')) {
@@ -802,4 +827,44 @@ function togglePostion(a, b) {
   temp1.remove();
   temp2.remove();
   temp1 = temp2 = null;
+}
+
+// 比较两个版本号的大小
+// Return 1 if a > b
+// Return -1 if a < b
+// Return 0 if a == b
+function compareVersion(a, b) {
+  if (a === b) {
+    return 0;
+  }
+
+  var aComponents = a.split(".");
+  var bComponents = b.split(".");
+
+  var len = Math.min(aComponents.length, bComponents.length);
+
+  // loop while the components are equal
+  for (var i = 0; i < len; i += 1) {
+    // A bigger than B
+    if (parseInt(aComponents[i], 10) > parseInt(bComponents[i], 10)) {
+      return 1;
+    }
+
+    // B bigger than A
+    if (parseInt(aComponents[i], 10) < parseInt(bComponents[i], 10)) {
+      return -1;
+    }
+  }
+
+  // If one's a prefix of the other, the longer one is greater.
+  if (aComponents.length > bComponents.length) {
+    return 1;
+  }
+
+  if (aComponents.length < bComponents.length) {
+    return -1;
+  }
+
+  // Otherwise they are the same.
+  return 0;
 }
