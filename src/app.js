@@ -292,7 +292,7 @@ function insertOpenProject(projectPath) {
     // 没有用户个人配置得请客，无需处理
   }
   // 整合配置
-  projectInfo = _.defaults(projectInfoUser, projectInfoDefault);
+  projectInfo = _.defaultsDeep(projectInfoUser, projectInfoDefault);
   console.log(projectInfo);
   let projectName = projectInfo.project;
 
