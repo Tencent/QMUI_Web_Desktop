@@ -273,15 +273,26 @@ function insertOpenProject(projectPath) {
   // 插入节点
   let projectDir = path.basename(projectPath);
   let projectInfo;
+  let projectInfoDefault;
+  let projectInfoUser = {};
+  // 项目全局配置
   try {
-    projectInfo = require(projectPath + '/UI_dev/config.js');
+    projectInfoDefault = require(projectPath + '/UI_dev/config.js');
   } catch(event) {
     try {
-      projectInfo = require(projectPath + '/UI_dev/config.json');
+      projectInfoDefault = require(projectPath + '/UI_dev/config.json');
     } catch(e) {
       alert('没有找到 UI_dev/config.json，不是标准的 QMUI 项目');
     }
   }
+  // 用户个人配置
+  try {
+    projectInfoUser = require(projectPath + '/UI_dev/config.user.js');
+  } catch (_e) {
+    // 没有用户个人配置得请客，无需处理
+  }
+  // 整合配置
+  projectInfo = _.defaults(projectInfoUser, projectInfoDefault);
   console.log(projectInfo);
   let projectName = projectInfo.project;
 
