@@ -1,6 +1,6 @@
 {
   "name": "qmui_web_desktop",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "基于 QMUI Web 的桌面 App，它可以管理基于 QMUI Web 进行开发的项目，并提供了编译提醒，出错提醒，进程关闭提醒等额外的功能。",
   "main": "main.js",
   "scripts": {
