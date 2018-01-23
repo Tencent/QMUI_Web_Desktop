@@ -511,7 +511,7 @@ function killChildProcess(projectDir) {
     }
 }
 
-function logReply(data, projectPath, isNodeSassVersion) {
+function logReply(data, projectPath) {
     let originData = data;
     let projectDir = path.basename(projectPath);
     let curProjectPath = $curProject.attr('title');
@@ -532,18 +532,10 @@ function logReply(data, projectPath, isNodeSassVersion) {
     // 样式编译完成后发通知
     let localStorage = Common.getLocalStorage();
     // 判断各种情况的正则
-    let errorReg;
-    let finishedReg;
-    let startingReg;
-    if (isNodeSassVersion) {
-        errorReg = /Error in plugin 'sass'/i;
-        finishedReg = /Finished 'sass'/i;
-        startingReg = /Starting 'sass'/i;
-    } else {
-        errorReg = /'compass' errored/i;
-        finishedReg = /Finished 'compass'/i;
-        startingReg = /Starting 'compass'/i;
-    }
+    let errorReg = /Error in plugin 'sass'/i;
+    let finishedReg = /Finished 'sass(WithCache)?'/i;
+    let startingReg = /Starting 'sass(WithCache)?'/i;
+
     // 样式编译失败通知
     if (originData.match(errorReg)) {
         sessionStorage['projects'][projectDir]['compileError'] = 'true';
@@ -552,7 +544,7 @@ function logReply(data, projectPath, isNodeSassVersion) {
             mainProcess.emit('compass', 'error');
         }
         if (localStorage['setting']['compass']['notification'] === 'true') {
-            Common.postNotification('Compass 编译失败', '详细情况请查看 Log');
+            Common.postNotification('Sass 编译失败', '详细情况请查看 Log');
         }
     }
     // 样式编译完成通知
@@ -562,7 +554,7 @@ function logReply(data, projectPath, isNodeSassVersion) {
             mainProcess.emit('compass', 'finish');
         }
         if (localStorage['setting']['compass']['notification'] === 'true') {
-            Common.postNotification('Compass 编译完成', '样式已经输出');
+            Common.postNotification('Sass 编译完成', '样式已经输出');
         }
     }
     // 样式编译开始通知（仅有状态栏通知）
@@ -578,12 +570,7 @@ function logReply(data, projectPath, isNodeSassVersion) {
 function runDevTask(projectPath, task) {
     let child;
     let qmuiPath = projectPath + '/UI_dev/qmui_web';
-    let qmuiInfo = require(qmuiPath + '/package.json');
     let startTipText; // 任务启动时的 Log，避免 Gulp 任务响应慢时需要等待一段时间才看到反馈
-    let isNodeSassVersion = false; // 用于记录当前项目的 QMUI 是否为基于 Node Sass 的 2.0.0 版本
-    if (compareVersion(qmuiInfo.version, '2.0.0') >= 0) {
-        isNodeSassVersion = true;
-    }
 
     if (task === 'main') {
         startTipText = '开启 Gulp 服务...';
@@ -594,7 +581,7 @@ function runDevTask(projectPath, task) {
     } else if (task === 'install') {
         startTipText = '开始为该项目安装 QMUI Web 所需的依赖包...';
     }
-    logReply(logTextWithDate(startTipText), projectPath, isNodeSassVersion);
+    logReply(logTextWithDate(startTipText), projectPath);
 
     if (Common.PLATFORM === 'win32') {
         if (task === 'install') {
@@ -621,18 +608,18 @@ function runDevTask(projectPath, task) {
     child.stdout.setEncoding('utf-8');
     child.stdout.on('data', function (data) {
         console.log(data);
-        logReply(data.toString(), projectPath, isNodeSassVersion);
+        logReply(data.toString(), projectPath);
     });
 
     child.stderr.on('data', function (data) {
         console.log(data)
-        logReply(data.toString(), projectPath, isNodeSassVersion);
+        logReply(data.toString(), projectPath);
     });
 
     child.on('close', function (code) {
         console.log(code);
         if (code && code !== 0) {
-            logReply(`child process exited with code ${code}`, projectPath, isNodeSassVersion);
+            logReply(`child process exited with code ${code}`, projectPath);
         }
 
         let tipText;
@@ -641,7 +628,7 @@ function runDevTask(projectPath, task) {
             if (closeGulpManually) {
                 closeGulpManually = false;
                 tipText = '已关闭 Gulp 服务';
-                logReply(logTextWithDate(tipText), projectPath, isNodeSassVersion);
+                logReply(logTextWithDate(tipText), projectPath);
             } else {
                 tipText = 'Gulp 进程意外关闭，请重新启动服务';
                 // 意外关闭的进程并没有进入正常的流程，因此需要手动更新 storage 和 UI 表现
@@ -657,7 +644,7 @@ function runDevTask(projectPath, task) {
                     $gulpButton.removeClass('frame_toolbar_btn_Watching');
                     $gulpButton.text('开启 Gulp 服务');
                 }
-                logReply(logTextWithDate(tipText), projectPath, isNodeSassVersion);
+                logReply(logTextWithDate(tipText), projectPath);
 
                 // 改变状态栏图标
                 mainProcess.emit('closeGulp');
@@ -682,7 +669,7 @@ function runDevTask(projectPath, task) {
             if (code && code !== 0) {
                 // 出错处理
                 tipText = '安装依赖包进程意外停止，请检查 NPM 和 Github 等环境后重新启动';
-                logReply(logTextWithDate(tipText), projectPath, isNodeSassVersion);
+                logReply(logTextWithDate(tipText), projectPath);
                 // 改变状态栏图标
                 mainProcess.emit('closeGulp');
                 // 发出通知
@@ -697,7 +684,7 @@ function runDevTask(projectPath, task) {
                     $installButton.addClass('qw_hide');
                 }
                 tipText = '依赖包安装完毕，可以开始使用 QMUI Web 的功能';
-                logReply(logTextWithDate(tipText), projectPath, isNodeSassVersion);
+                logReply(logTextWithDate(tipText), projectPath);
             }
         }
     });
