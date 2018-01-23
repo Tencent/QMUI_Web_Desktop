@@ -1,29 +1,29 @@
 {
-  "name": "qmui_web_desktop",
-  "version": "2.0.0",
-  "description": "基于 QMUI Web 的桌面 App，它可以管理基于 QMUI Web 进行开发的项目，并提供了编译提醒，出错提醒，进程关闭提醒等额外的功能。",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Tencent/QMUI_Web_Desktop.git"
-  },
-  "main": "main.js",
-  "scripts": {
-    "start": "electron main.js",
-    "build:mac": "electron-packager ./ QMUI --platform=darwin --arch=x64 --icon=./images/logo.icns --overwrite --out ./dist/$npm_package_version --ignore='(node_modules/electron-*|node_modules/.bin|.git|.DS_Store|dist)'",
-    "build:win": "electron-packager ./ QMUI --platform=win32 --arch=x64 --icon=./images/logo.ico --overwrite --out ./dist/$npm_package_version --ignore='(node_modules/electron-*|.git|.DS_Store|dist)'"
-  },
-  "dependencies": {
-    "lodash": "^4.16.4"
-  },
-  "devDependencies": {
-    "asar": "^0.14.0",
-    "electron-packager": "^10.1.0",
-    "electron-prebuilt": "^1.3.4"
-  },
-  "author": "QMUI Team",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/Tencent/QMUI_Web_Desktop/issues"
-  },
-  "homepage": "http://qmuiteam.com/web/"
+    "name": "qmui_web_desktop",
+    "version": "2.0.0",
+    "description": "基于 QMUI Web 的桌面 App，它可以管理基于 QMUI Web 进行开发的项目，并提供了编译提醒，出错提醒，进程关闭提醒等额外的功能。",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/Tencent/QMUI_Web_Desktop.git"
+    },
+    "main": "main.js",
+    "scripts": {
+        "start": "electron main.js",
+        "build:mac": "electron-packager ./ QMUI --platform=darwin --arch=x64 --icon=./images/logo.icns --overwrite --out ./dist/$npm_package_version --ignore='(node_modules/electron-*|node_modules/.bin|.git|.DS_Store|dist)'",
+        "build:win": "electron-packager ./ QMUI --platform=win32 --arch=x64 --icon=./images/logo.ico --overwrite --out ./dist/$npm_package_version --ignore='(node_modules/electron-*|.git|.DS_Store|dist)'"
+    },
+    "dependencies": {
+        "lodash": "^4.16.4"
+    },
+    "devDependencies": {
+        "asar": "^0.14.0",
+        "electron-packager": "^10.1.0",
+        "electron-prebuilt": "^1.3.4"
+    },
+    "author": "QMUI Team",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/Tencent/QMUI_Web_Desktop/issues"
+    },
+    "homepage": "http://qmuiteam.com/web/"
 }

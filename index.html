@@ -1,91 +1,93 @@
 <!DOCTYPE html>
 <html lang="zh-cmn">
-  <head>
-    <meta charset="UTF-8" />
+<head>
+    <meta charset="UTF-8"/>
     <title>QMUI Web Desktop</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" />
-    <link rel="stylesheet" type="text/css" href="css/main.css" />
-    <link rel="stylesheet" type="text/css" href="css/jquery-impromptu.css" />
-  </head>
-  <body class="frame_wrap" id="wrapper">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"/>
+    <link rel="stylesheet" type="text/css" href="css/main.css"/>
+    <link rel="stylesheet" type="text/css" href="css/jquery-impromptu.css"/>
+</head>
+<body class="frame_wrap" id="wrapper">
 
-    <div class="frame_statusBar">
-      <div class="frame_statusBar_inner" id="statusBar_inner">
+<div class="frame_statusBar">
+    <div class="frame_statusBar_inner" id="statusBar_inner">
         <a class="frame_statusBar_btn frame_statusBar_btn_Close js_statusBar_close" href="javascript:;">
-          <span class="frame_statusBar_btn_icon"></span>
+            <span class="frame_statusBar_btn_icon"></span>
         </a>
         <a class="frame_statusBar_btn frame_statusBar_btn_Min js_statusBar_min" href="javascript:;">
-          <span class="frame_statusBar_btn_icon"></span>
+            <span class="frame_statusBar_btn_icon"></span>
         </a>
         <a class="frame_statusBar_btn frame_statusBar_btn_Max js_statusBar_max" href="javascript:;">
-          <span class="frame_statusBar_btn_icon"></span>
+            <span class="frame_statusBar_btn_icon"></span>
         </a>
-      </div>
     </div>
+</div>
 
-    <div class="welcome_stage" id="welcomeStage">
-      <h1 class="qw_icon qw_icon_WelcomeLogo welcome_stage_title">QMUI Web Desktop</h1>
-      <div class="welcome_stage_desc">你可以把 QMUI Web 项目的根目录拖到这里</div>
+<div class="welcome_stage" id="welcomeStage">
+    <h1 class="qw_icon qw_icon_WelcomeLogo welcome_stage_title">QMUI Web Desktop</h1>
+    <div class="welcome_stage_desc">你可以把 QMUI Web 项目的根目录拖到这里</div>
+</div>
+
+<div class="project_stage qw_hide" id="projectStage">
+    <div class="project_stage_title">项目列表</div>
+    <ul class="project_stage_list" id="projectList"></ul>
+</div>
+
+<div class="operation_stage qw_hide" id="operationStage">
+    <div class="operation_stage_mask"></div>
+    <a class="operation_stage_clearLogBtn" id="cleanLog" href="javascript:;">清空日志</a>
+    <div class="operation_stage_log" id="log">
     </div>
+</div>
 
-    <div class="project_stage qw_hide" id="projectStage">
-      <div class="project_stage_title">项目列表</div>
-      <ul class="project_stage_list" id="projectList"></ul>
-    </div>
+<div class="frame_toolbar frame_toolbar_EmptyProject qw_clear" id="toolbar">
+    <a class="frame_toolbar_btn frame_toolbar_btn_Install qw_hide" href="javascript:;" id="installButton">安装依赖包</a>
+    <a class="frame_toolbar_btn frame_toolbar_btn_Gulp" href="javascript:;" id="gulpButton">开启 Gulp 服务</a>
+    <a class="frame_toolbar_btn" href="javascript:;" id="mergeButton">合并变更</a>
+    <a class="frame_toolbar_btn" href="javascript:;" id="cleanButton">清理文件</a>
 
-    <div class="operation_stage qw_hide" id="operationStage">
-      <div class="operation_stage_mask"></div>
-      <a class="operation_stage_clearLogBtn" id="cleanLog" href="javascript:;">清空日志</a>
-      <div class="operation_stage_log" id="log">
-      </div>
-    </div>
-
-    <div class="frame_toolbar frame_toolbar_EmptyProject qw_clear" id="toolbar">
-      <a class="frame_toolbar_btn frame_toolbar_btn_Install qw_hide" href="javascript:;" id="installButton">安装依赖包</a>
-      <a class="frame_toolbar_btn frame_toolbar_btn_Gulp" href="javascript:;" id="gulpButton">开启 Gulp 服务</a>
-      <a class="frame_toolbar_btn" href="javascript:;" id="mergeButton">合并变更</a>
-      <a class="frame_toolbar_btn" href="javascript:;" id="cleanButton">清理文件</a>
-
-      <a class="frame_toolbar_item frame_toolbar_item_OpenProject" href="javascript:;">
+    <a class="frame_toolbar_item frame_toolbar_item_OpenProject" href="javascript:;">
         <span class="qw_icon qw_icon_Add"></span>
         <span class="frame_toolbar_item_openProjectText">打开项目</span>
-        <input class="frame_toolbar_item_openProjectIpt" id="openProject" type="file" webkitdirectory multiple title="打开项目" /></a>
-      <a class="frame_toolbar_item frame_toolbar_item_DelProject" id="delProject" href="javascript:;" title="删除当前选择的项目">
+        <input class="frame_toolbar_item_openProjectIpt" id="openProject" type="file" webkitdirectory multiple
+               title="打开项目"/></a>
+    <a class="frame_toolbar_item frame_toolbar_item_DelProject" id="delProject" href="javascript:;" title="删除当前选择的项目">
         <span class="qw_icon qw_icon_Remove"></span>
-      </a>
-      <a class="frame_toolbar_item frame_toolbar_item_Setting" id="showSetting" href="javascript:;" title="设置">
+    </a>
+    <a class="frame_toolbar_item frame_toolbar_item_Setting" id="showSetting" href="javascript:;" title="设置">
         <span class="qw_icon qw_icon_Setting"></span>
-      </a>
-    </div>
+    </a>
+</div>
 
-    <div class="setting_panelMask qw_hide" id="settingStageMask"></div>
-    <div class="setting_panel qw_hide" id="settingStage">
+<div class="setting_panelMask qw_hide" id="settingStageMask"></div>
+<div class="setting_panel qw_hide" id="settingStage">
 
-      <div class="setting_panel_title">Compass 编译通知</div>
-      <div class="setting_panel_list">
+    <div class="setting_panel_title">Compass 编译通知</div>
+    <div class="setting_panel_list">
         <div class="setting_panel_item">
-          <label class="qw_label" for="compass_notification">
-            <input id="compass_notification" class="qw_checkbox" type="checkbox" />
-            <span>编译完成后发出桌面通知</span>
-          </label>
+            <label class="qw_label" for="compass_notification">
+                <input id="compass_notification" class="qw_checkbox" type="checkbox"/>
+                <span>编译完成后发出桌面通知</span>
+            </label>
         </div>
         <div class="setting_panel_item">
-          <label class="qw_label" for="compass_statusIcon">
-            <input id="compass_statusIcon" class="qw_checkbox" type="checkbox" />
-            <span>编译时改变状态栏图标</span>
-          </label>
+            <label class="qw_label" for="compass_statusIcon">
+                <input id="compass_statusIcon" class="qw_checkbox" type="checkbox"/>
+                <span>编译时改变状态栏图标</span>
+            </label>
         </div>
-      </div>
-
     </div>
 
-    <script>
-      delete window.exports;
-      delete window.module;
-    </script>
-    <script src="js/jquery.min.js"></script>
-    <script src="js/jquery-impromptu.js"></script>
-    <script src="src/menu.js"></script>
-    <script src="src/app.js"></script>
-  </body>
+</div>
+
+<script>
+    delete window.exports;
+    delete window.module;
+</script>
+<script src="js/jquery.min.js"></script>
+<script src="js/jquery-impromptu.js"></script>
+<script src="src/menu.js"></script>
+<script src="src/app.js"></script>
+</body>
 </html>
