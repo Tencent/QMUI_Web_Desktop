@@ -244,13 +244,9 @@ function openProject(projectPath) {
   let storage = Common.getLocalStorage();
   let projectInfo;
   try {
-    projectInfo = require(projectPath + '/UI_dev/config.js');
+    projectInfo = require(projectPath + '/UI_dev/qmui.config.js');
   } catch(event) {
-    try {
-      projectInfo = require(projectPath + '/UI_dev/config.json');
-    } catch(e) {
-      alert('没有找到 UI_dev/config.json，不是标准的 QMUI 项目');
-    }
+    alert('没有找到 UI_dev/qmui.config.js，不是标准的 QMUI 项目');
   }
   if (!projectInfo) {
     return;
@@ -292,17 +288,13 @@ function insertOpenProject(projectPath) {
   let projectInfoUser = {};
   // 项目全局配置
   try {
-    projectInfoDefault = require(projectPath + '/UI_dev/config.js');
+    projectInfoDefault = require(projectPath + '/UI_dev/qmui.config.js');
   } catch(event) {
-    try {
-      projectInfoDefault = require(projectPath + '/UI_dev/config.json');
-    } catch(e) {
-      alert('没有找到 UI_dev/config.json，不是标准的 QMUI 项目');
-    }
+    alert('没有找到 UI_dev/qmui.config.js，QMUI 项目');
   }
   // 用户个人配置
   try {
-    projectInfoUser = require(projectPath + '/UI_dev/config.user.js');
+    projectInfoUser = require(projectPath + '/UI_dev/qmui.config.user.js');
   } catch (_e) {
     // 没有用户个人配置得请客，无需处理
   }
@@ -606,15 +598,15 @@ function runDevTask(projectPath, task) {
 
   if (Common.PLATFORM === 'win32') {
     if (task === 'install') {
-      child = childProcess.exec('npm install', {'cwd': qmuiPath, silent: true});
+      child = childProcess.exec('npm install --no-color', {'cwd': qmuiPath, silent: true});
     } else {
-      child = childProcess.exec('gulp ' + task, {'cwd': qmuiPath, silent: true});
+      child = childProcess.exec('gulp --no-color' + task, {'cwd': qmuiPath, silent: true});
     }
   } else {
     if (task === 'install') {
-      child = childProcess.spawn('npm', [task], {env: {'PATH':'/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin'}, cwd: qmuiPath});
+      child = childProcess.spawn('npm', [task, '--no-color'], {env: {'PATH':'/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin'}, cwd: qmuiPath});
     } else {
-      child = childProcess.spawn('gulp', [task], {env: {'PATH':'/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin'}, cwd: qmuiPath, silent: true});
+      child = childProcess.spawn('gulp', [task, '--no-color'], {env: {'PATH':'/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin'}, cwd: qmuiPath, silent: true});
     }
   }
   console.log(child.pid);
