@@ -532,11 +532,12 @@ function logReply(data, projectPath) {
     // 样式编译完成后发通知
     let localStorage = Common.getLocalStorage();
     // 判断各种情况的正则
-    let errorReg = /Error in plugin 'sass'/i;
+    let errorReg = / in plugin /i;
     let finishedReg = /Finished 'sass(WithCache)?'/i;
     let startingReg = /Starting 'sass(WithCache)?'/i;
 
     // 样式编译失败通知
+    console.log(originData);
     if (originData.match(errorReg)) {
         sessionStorage['projects'][projectDir]['compileError'] = 'true';
         Common.setSessionStorage(sessionStorage);
