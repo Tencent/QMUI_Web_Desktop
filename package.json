@@ -10,7 +10,7 @@
     "scripts": {
         "start": "electron main.js",
         "build:mac": "electron-packager ./ QMUI --platform=darwin --arch=x64 --icon=./images/logo.icns --overwrite --out ./dist/$npm_package_version --ignore='(node_modules/electron-*|node_modules/.bin|.git|.DS_Store|dist)'",
-        "build:win": "electron-packager ./ QMUI --platform=win32 --arch=x64 --icon=./images/logo.ico --overwrite --out ./dist/$npm_package_version --ignore='(node_modules/electron-*|.git|.DS_Store|dist)'"
+        "build:win": "electron-packager ./ QMUI --platform=win32 --arch=x64 --icon=./images/logo.ico --overwrite --out ./dist/$npm_package_version --ignore=dist"
     },
     "dependencies": {
         "fs-extra": "^5.0.0",
